@@ -1,11 +1,13 @@
 package com.example.bankcards.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+@Data
 @Entity
 @Table(name = "users")
 public class User {
