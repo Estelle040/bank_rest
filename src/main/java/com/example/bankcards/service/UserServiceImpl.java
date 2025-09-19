@@ -47,7 +47,6 @@ public class UserServiceImpl implements UserService {
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id " + id));
-        System.out.println("Found user: " + user.getName() + " with role: " + (user.getRole() != null ? user.getRole().getName() : "null"));
         return userMapper.toUserDTO(user);
     }
 
