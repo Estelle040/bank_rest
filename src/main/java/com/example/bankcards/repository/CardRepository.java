@@ -1,8 +1,19 @@
 package com.example.bankcards.repository;
 
 import com.example.bankcards.entity.Card;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.repository.CrudRepository;
+
+
+import java.util.Optional;
 
 public interface CardRepository extends JpaRepository<Card, Long> {
+
+    Page<Card> findByOwnerId(Long ownerId, Pageable pageable);
+    Page<Card> findByOwnerIdAndNumberContaining(Long ownerId, String number, Pageable pageable);
+
+    boolean existsByNumber(String number);
+
+    Optional<Card> findByNumber(String cardNumber);
 }
