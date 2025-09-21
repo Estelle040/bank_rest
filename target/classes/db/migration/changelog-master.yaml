@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/migration/0002-create-cards.yaml
   - include:
       file: db/migration/0003-insert-roles.yaml
+  - include:
+      file: db/migration/0004-create-blockrequest.yaml

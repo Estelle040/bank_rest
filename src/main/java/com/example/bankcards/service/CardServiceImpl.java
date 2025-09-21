@@ -1,13 +1,18 @@
 package com.example.bankcards.service;
 
 
+import com.example.bankcards.dto.BlockRequestDTO;
 import com.example.bankcards.dto.CardDTO;
+import com.example.bankcards.entity.BlockRequest;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.Status;
 import com.example.bankcards.entity.User;
+import com.example.bankcards.repository.BlockRequestRepository;
 import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.repository.UserRepository;
+import com.example.bankcards.util.BlockRequestMapper;
 import com.example.bankcards.util.CardMapper;
+import com.example.bankcards.util.EncryptionUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,9 +20,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class CardServiceImpl implements CardService {
@@ -25,14 +30,21 @@ public class CardServiceImpl implements CardService {
     private final CardRepository cardRepository;
     private final CardMapper cardMapper;
     private final UserRepository userRepository;
+    private final BlockRequestRepository blockRequestRepository;
+    private final BlockRequestMapper blockRequestMapper;
+    private final EncryptionUtil encryptionUtil;
 
-    public CardServiceImpl(CardRepository cardRepository, CardMapper cardMapper, UserRepository userRepository) {
+    public CardServiceImpl(CardRepository cardRepository, CardMapper cardMapper, UserRepository userRepository, BlockRequestRepository blockRequestRepository, BlockRequestMapper blockRequestMapper, EncryptionUtil encryptionUtil) {
         this.cardRepository = cardRepository;
         this.cardMapper = cardMapper;
         this.userRepository = userRepository;
+        this.blockRequestRepository = blockRequestRepository;
+        this.blockRequestMapper = blockRequestMapper;
+        this.encryptionUtil = encryptionUtil;
     }
 
     @Override
+    @Transactional
     public CardDTO createCard(CardDTO cardDTO) {
         if(cardRepository.existsByNumber(cardDTO.getNumber())) {
             throw new RuntimeException("Card with number " + cardDTO.getNumber() + " already exists");
@@ -41,6 +53,7 @@ public class CardServiceImpl implements CardService {
         User user = userRepository.findById(cardDTO.getOwner().getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         card.setOwner(user);
+        card.setNumber(encryptionUtil.encrypt(cardDTO.getNumber()));
         Card savedCard = cardRepository.save(card);
         return cardMapper.toCardDTO(savedCard);
     }
@@ -64,9 +77,18 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public List<CardDTO> getAllCards() {
-        return cardRepository.findAll().stream()
-                .map(cardMapper::toCardDTO)
-                .collect(Collectors.toList());
+        List<Card> cards = cardRepository.findAll();
+
+        List<CardDTO> result = new ArrayList<>();
+        for(Card card : cards) {
+            CardDTO cardDTO = cardMapper.toCardDTO(card);
+            if(cardDTO.getNumber() != null) {
+                String decryptedNumber = encryptionUtil.decrypt(cardDTO.getNumber());
+                cardDTO.setNumber(decryptedNumber);
+            }
+            result.add(cardDTO);
+        }
+        return result;
     }
 
     @Override
@@ -80,7 +102,7 @@ public class CardServiceImpl implements CardService {
         Card toCard = cardRepository.findById(toCardId).orElseThrow(() -> new RuntimeException("Card not found"));
 
         if(fromCard.getStatus().equals(Status.ACTIVE) && toCard.getStatus().equals(Status.ACTIVE)){
-            if(fromCard.getBalance().compareTo(amount) > 0){
+            if(fromCard.getBalance().compareTo(amount) >= 0){
                 fromCard.setBalance(fromCard.getBalance().subtract(amount));
                 toCard.setBalance(toCard.getBalance().add(amount));
                 cardRepository.save(fromCard);
@@ -110,7 +132,8 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public BigDecimal showBalance(String cardNumber){
-        Optional<Card> card = cardRepository.findByNumber(cardNumber);
+        String encryptedNumber = encryptionUtil.encrypt(cardNumber);
+        Optional<Card> card = cardRepository.findByNumber(encryptedNumber);
         if(card.isPresent()){
             return card.get().getBalance();
         }
@@ -121,19 +144,22 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public CardDTO changeCardStatus(String cardNumber, String status){
-        Card card = cardRepository.findByNumber(cardNumber).orElseThrow(() -> new RuntimeException("Card not found"));
+        String encryptedNumber = encryptionUtil.encrypt(cardNumber);
+        Card card = cardRepository.findByNumber(encryptedNumber).orElseThrow(() -> new RuntimeException("Card not found"));
         card.setStatus(Status.valueOf(status));
         cardRepository.save(card);
         return cardMapper.toCardDTO(card);
     }
 
-//    @Override
-//    public BlockRequest cardBlockRequest(String cardNumber, String reason){
-//        Card card = cardRepository.findByNumber(cardNumber).orElseThrow(() -> new RuntimeException("Card not found"));
-//        BlockRequest requestDTO = new BlockRequest();
-//        requestDTO.setReason(reason);
-//        requestDTO.setNumber(String.valueOf(card.getNumber()));
-//        return requestDTO;
-//    }
+    @Override
+    public BlockRequestDTO cardBlockRequest(String cardNumber, String reason){
+        String encryptedNumber = encryptionUtil.encrypt(cardNumber);
+        Card card = cardRepository.findByNumber(encryptedNumber).orElseThrow(() -> new RuntimeException("Card not found"));
+        BlockRequest request = new BlockRequest();
+        request.setReason(reason);
+        request.setCardNumber(card.getNumber());
+        blockRequestRepository.save(request);
+        return blockRequestMapper.toDTO(request);
+    }
 }
 

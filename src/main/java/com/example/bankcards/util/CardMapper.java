@@ -6,9 +6,9 @@ import com.example.bankcards.dto.UserDTO;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.Role;
 import com.example.bankcards.entity.User;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
+import org.mapstruct.*;
+
+import static com.example.bankcards.util.MaskUtil.mask16;
 
 @Mapper(componentModel = "spring")
 public interface CardMapper {
@@ -50,4 +50,12 @@ public interface CardMapper {
         }
         return user;
     }
+
+    @AfterMapping
+    default void maskNumber(Card card, @MappingTarget CardDTO cardDTO){
+        if(card != null){
+            cardDTO.setNumber(mask16(card.getNumber()));
+        }
+    }
+
 }

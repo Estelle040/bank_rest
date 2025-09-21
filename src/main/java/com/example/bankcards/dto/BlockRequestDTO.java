@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class BlockRequest {
+public class BlockRequestDTO {
     private String number;
     private String reason;
 }

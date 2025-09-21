@@ -1,6 +1,7 @@
 package com.example.bankcards.service;
 
 
+import com.example.bankcards.dto.BlockRequestDTO;
 import com.example.bankcards.dto.CardDTO;
 import org.springframework.data.domain.Page;
 
@@ -23,5 +24,5 @@ public interface CardService {
     CardDTO changeCardStatus(String cardNumber, String status);
 
 
-//    BlockRequest cardBlockRequest(String cardNumber, String reason);
+    BlockRequestDTO cardBlockRequest(String cardNumber, String reason);
 }
