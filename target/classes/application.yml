@@ -2,9 +2,9 @@
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/bankdb
-    username: postgres
-    password: 5242
+    url: jdbc:postgresql://db:5432/bankdb
+    username: admin
+    password: admin
     driver-class-name: org.postgresql.Driver
 
 

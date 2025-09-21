@@ -15,3 +15,15 @@ databaseChangeLog:
               - column:
                   name: name
                   value: ROLE_USER
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: name
+                  value: admin
+              - column:
+                  name: password
+                  value: admin
+              - column:
+                  name: role_id
+                  value: 1

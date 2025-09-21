@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Component
 public class JwtTokenProvider {
 
-    private String jwtSecret = "secret";
+    private String jwtSecret = "0j3N8wq9R2Hf5J6pK7Lm9V3qP4a8S0dX1F2G3H4J5K6L7M8N9O0P1Q2R3S4T5U6V";
     private long jwtExpirationMs = 60 * 60 * 24 * 7;
 
     public String generateToken(UserDetails userDetails) {
@@ -42,5 +42,9 @@ public class JwtTokenProvider {
     public String getUsernameFromToken(String token) {
         return Jwts.parser().setSigningKey(jwtSecret)
                 .parseClaimsJws(token).getBody().getSubject();
+    }
+
+    public Object getExpiration() {
+        return jwtExpirationMs;
     }
 }

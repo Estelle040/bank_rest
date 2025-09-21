@@ -21,6 +21,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -40,32 +43,31 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
+    public ResponseEntity<?> login(@RequestBody AuthRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        loginRequest.getUsername(), loginRequest.getPassword()
+                )
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtTokenProvider.generateToken((UserDetails) authentication.getPrincipal());
-        return ResponseEntity.ok(new JwtResponse(token));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("access_token", token);
+        response.put("token_type", "Bearer");
+        response.put("expires_in", jwtTokenProvider.getExpiration());
+        return ResponseEntity.ok(response);
     }
 
+
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
-        if (userRepository.existsByName(registerRequest.getUsername())) {
-            return ResponseEntity.badRequest().body("Username already exists");
-        }
-
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         User user = new User();
-        user.setName(registerRequest.getUsername());
-        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        Role role = roleRepository.findByName(registerRequest.getRole());
-        if (role == null) {
-            throw new BadCredentialsException("Invalid role");
-        }
-        user.setRole(role);
+        user.setName(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(roleRepository.findByName(request.getRole()));
         userRepository.save(user);
-
         return ResponseEntity.ok("User registered successfully");
     }
 }

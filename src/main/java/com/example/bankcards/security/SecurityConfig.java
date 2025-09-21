@@ -1,5 +1,6 @@
 package com.example.bankcards.security;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.OAuthFlow;
@@ -35,7 +36,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Отключаем CSRF, т.к. у нас stateless REST API
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -51,9 +51,9 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService),
                         UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
+
 
     @Bean
     public OpenAPI customOpenAPI() {
@@ -63,14 +63,19 @@ public class SecurityConfig {
                         .version("1.0")
                         .description("API для управления банковскими картами"))
                 .addSecurityItem(new SecurityRequirement().addList("oauth2"))
-                .components(new io.swagger.v3.oas.models.Components()
+                .components(new Components()
                         .addSecuritySchemes("oauth2",
                                 new SecurityScheme()
                                         .type(SecurityScheme.Type.OAUTH2)
                                         .flows(new OAuthFlows()
                                                 .password(new OAuthFlow()
-                                                        .tokenUrl("/api/auth/login")))));
+                                                        .tokenUrl("/api/auth/login")
+                                                )
+                                        )
+                        )
+                );
     }
+
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
